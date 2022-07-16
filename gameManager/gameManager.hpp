@@ -6,6 +6,7 @@
 #include "../texDict/texDict.hpp"
 #include "../game/inGame/Entities/Renderable.hpp"
 #include "../game/inGame/Updatable.hpp"
+#include "../game/inGame/Entities/playables/Player/Player.hpp"
 #include "level/Level.hpp"
 #include <thread>
 #include <array>
@@ -37,12 +38,6 @@ private:
 	levels level0;
 	float cameraX = 0;
 	float cameraY = 0;
-	float fPlayerPosX = 2;
-	float fPlayerPosY = 12;
-	float fPlayerVelX = 0;
-	float fPlayerVelY = 0;
-	float fPlayerAccX = 0;
-	float fPlayerAccY = 0;
-	bool bPlayerOnGround = false;
+	Player mrGuy;
 };
 extern gameManager GameManager;

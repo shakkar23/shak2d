@@ -3,7 +3,7 @@
 
 struct boundingBox{
 	public:
-		uint16_t x, y, w, h;
+		float x, y, w, h;
 };
 
 struct velocity{

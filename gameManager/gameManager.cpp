@@ -31,9 +31,10 @@ void gameManager::Init(RenderWindow &window){
     
     for(int i=0; i < 10; i++){
 			placeDirt(level0, i, i);
-		
 	}
     
+    mrGuy.boundingBox.x = 2;
+	mrGuy.boundingBox.y = 2;
 
 	/*
     level0.level.at(1).at(level0.level[0].size() - 1) = levelData::dirt;
@@ -45,33 +46,7 @@ void gameManager::Init(RenderWindow &window){
 }
 
 void gameManager::movement(const moveDirection& prevplayer, const moveDirection& player) {
-
-	if(player.Down) {
-        fPlayerVelY += 6.0f * DELTATIME;
-	}  
-    if(player.Jump && prevplayer.Jump) {
-		if(bPlayerOnGround)
-            fPlayerVelY -= 6.0f;
-        fPlayerVelY -=1.0f;
-    }
-    if(player.Left) {
-        fPlayerVelX += (bPlayerOnGround ? -25.0f : -15.0f) * DELTATIME;
-	}  
-    if(player.Right) {
-        fPlayerVelX += (bPlayerOnGround ? 25.0f : 15.0f) * DELTATIME;
-	}
-    // Clamp velocities
-    if (fPlayerVelX > 100.0f)
-        fPlayerVelX = 100.0f;
-
-    if (fPlayerVelX < -100.0f)
-        fPlayerVelX = -100.0f;
-
-    if (fPlayerVelY > 100.0f)
-        fPlayerVelY = 100.0f;
-
-    if (fPlayerVelY < -100.0f)
-        fPlayerVelY = -100.0f;
+    mrGuy.update(prevplayer, player, DELTATIME);
 }
     levelData gameManager::GetTile(float x, float y) {
         // check if x and y are within the bounds of the level
@@ -85,29 +60,21 @@ void gameManager::movement(const moveDirection& prevplayer, const moveDirection&
 void gameManager::collision() {
 
     //gravity
-    constexpr  auto  grav = 20.0f * DELTATIME;
-        fPlayerVelY += grav;
-
-	float fNewPlayerPosX = fPlayerPosX + (fPlayerVelX + fPlayerAccX) * DELTATIME;
-    float fNewPlayerPosY = fPlayerPosY + (fPlayerVelY + fPlayerAccY) * DELTATIME;
+	float fNewPlayerPosX = mrGuy.boundingBox.x + (mrGuy.velocity.x + mrGuy.acceleration.x) * DELTATIME;
+    float fNewPlayerPosY = mrGuy.boundingBox.y + (mrGuy.velocity.y + mrGuy.acceleration.y) * DELTATIME;
 	
     // drag
-    if (bPlayerOnGround)
-    {
-        fPlayerVelX += -3.0f * fPlayerVelX * DELTATIME;
-        if (fabs(fPlayerVelX) < 0.01f)
-            fPlayerVelX = 0.0f;
-    }
+    
 
 
     Coord<float> playerSizeCoord = { 1.0f, 1.0f }; 
 	
-    if (fPlayerVelX <= 0) // Moving Left
+    if (mrGuy.velocity.x <= 0) // Moving Left
     {
         bool inABlock = false;
         for (int i = 0; i <= playerSizeCoord.y; i++) {
             bool end = (i + 1.0f) > playerSizeCoord.y ? true : false;
-            if (GetTile(fNewPlayerPosX, fPlayerPosY + (i - (end * 0.0001f))) != levelData::sky)
+            if (GetTile(fNewPlayerPosX, mrGuy.boundingBox.y + (i - (end * 0.0001f))) != levelData::sky)
             {
                 //if collided
                 inABlock = true;
@@ -118,7 +85,7 @@ void gameManager::collision() {
         {
             if (fNewPlayerPosX < 0) fNewPlayerPosX--;
             fNewPlayerPosX = (int)fNewPlayerPosX + 1;
-            fPlayerVelX = 0;
+            mrGuy.velocity.x = 0;
         }
     }
     else // Moving Right
@@ -126,7 +93,7 @@ void gameManager::collision() {
         bool inABlock = false;
         for (int i = 0; i <= playerSizeCoord.y; i++) {
             bool end = (i + 1.0f) > playerSizeCoord.y ? true : false;
-            if (GetTile(fNewPlayerPosX + playerSizeCoord.x - 0.0001f, fPlayerPosY + i - (end * 0.0001f)) != levelData::sky)
+            if (GetTile(fNewPlayerPosX + playerSizeCoord.x - 0.0001f, mrGuy.boundingBox.y + i - (end * 0.0001f)) != levelData::sky)
             {
                 inABlock = true;
                 break;
@@ -135,13 +102,13 @@ void gameManager::collision() {
         if (inABlock)
         {
             fNewPlayerPosX = (int)fNewPlayerPosX;
-            fPlayerVelX = 0;
+            mrGuy.velocity.x = 0;
 
         }
     }
 
-    bPlayerOnGround = false;
-    if (fPlayerVelY <= 0) // Moving Up
+    mrGuy.isOnGround = false;
+    if (mrGuy.velocity.y <= 0) // Moving Up
     {
         bool inABlock = false;
         for (int i = 0; i <= playerSizeCoord.x; i++) {
@@ -155,7 +122,7 @@ void gameManager::collision() {
         if (inABlock)
         {			
             fNewPlayerPosY = (int)fNewPlayerPosY + 1;
-            fPlayerVelY = 0;
+            mrGuy.velocity.y = 0;
         }
     }
     else // Moving Down
@@ -176,12 +143,12 @@ void gameManager::collision() {
             if (fNewPlayerPosY < 0)
                 fNewPlayerPosY--;
             fNewPlayerPosY = (int)fNewPlayerPosY;
-            fPlayerVelY = 0;
-            bPlayerOnGround = true; // Player has a solid surface underfoot
+            mrGuy.velocity.y = 0;
+            mrGuy.isOnGround = true; // Player has a solid surface underfoot
         }
     }
-	fPlayerPosX = fNewPlayerPosX;
-	fPlayerPosY = fNewPlayerPosY;
+	mrGuy.boundingBox.x = fNewPlayerPosX;
+	mrGuy.boundingBox.y = fNewPlayerPosY;
     
 	
 }
@@ -191,15 +158,15 @@ bool gameManager::winCondition() {
 }
 void gameManager::gameLogic(const moveDirection& prevplayer, const moveDirection &player) {
     
-    //movement(prevplayer, player);
-    //collision();
+    movement(prevplayer, player);
+    collision();
     //if (winCondition())
     //    won = true;
 }
 void gameManager::render(RenderWindow &window) {
     window.clear();
-	cameraX = fPlayerPosX + (1 / 2.0f);
-    cameraY = fPlayerPosY + (1 / 2.0f);
+	cameraX = mrGuy.boundingBox.x + (1 / 2.0f);
+    cameraY = mrGuy.boundingBox.y + (1 / 2.0f);
 
     int winX{}, winY{};
     window.getWindowSize(winX, winY);
@@ -265,8 +232,8 @@ void gameManager::render(RenderWindow &window) {
 	}
     window.render(player.srcRect, {
         //1715.50757
-        (int)((fPlayerPosX - fOffsetX) * tileWidth),
-        (int)((fPlayerPosY - fOffsetY) * tileWidth),
+        (int)((mrGuy.boundingBox.x - fOffsetX) * tileWidth),
+        (int)((mrGuy.boundingBox.y - fOffsetY) * tileWidth),
         (int)ceil(tileWidth),
         (int)ceil(tileWidth),
         }, player.texture->texture);
